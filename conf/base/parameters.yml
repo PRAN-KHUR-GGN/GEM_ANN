@@ -1,0 +1,112 @@
+split:
+    type: 'frac'
+    train_split_fract: 0.8
+
+
+train_deeplearning:
+    target: 'model_target'
+    features: 'model_feature'
+    split:
+        type: frac
+        train_split_fract: 0.8 # req. iff `type: frac`
+        datetime_val: !!timestamp '2020-04-26 03:59:59' # req. iff `type: date`
+        datetime_col: "timestamp"
+    train_split_fract: 0.8
+    transformers:
+        - class: sklearn.preprocessing.StandardScaler
+          kwargs: {}
+          name: standard_scaler
+    build_fn: 
+        kedro_tutorial.pipelines.train_dl_model.nodes.create_sequential_model
+    estimator:
+        class: kedro_tutorial.pipelines.train_dl_model.KerasEstimator
+    fit:
+        epochs: 50
+        callbacks:
+            tensorboard:
+                class: 'tensorflow.keras.callbacks.TensorBoard'
+                kwargs:
+                    log_dir: "./logs"
+            es:
+                class: 'tensorflow.keras.callbacks.EarlyStopping'
+                kwargs:
+                    patience: 100
+                    monitor: 'val_loss'
+            ray: # ray[tune] keras integration callback
+                class: ray.tune.integration.keras.TuneReportCallback
+                kwargs:
+                  metrics: "val_loss"
+                  "on": 'epoch_end'
+    metrics:
+        - 'mean_absolute_error'
+        - 'mean_absolute_percentage_error'
+    architecture:
+        layer_01:
+            n_block: 1
+            class: "tensorflow.keras.layers.Dense"
+            kwargs:
+                units: 20
+                activation: "relu"
+        layer_02:
+            n_block: 1
+            class: "tensorflow.keras.layers.Dense"
+            kwargs:
+                units: 10
+                activation: "relu"
+        layer_03:
+            n_block: 1
+            class: "tensorflow.keras.layers.Dense"
+            kwargs:
+                units: 1
+                activation: "linear"
+    optimizer:
+        class: 'tensorflow.keras.optimizers.Adam'
+        kwargs:
+            learning_rate: 0.005 # default adam lr = 0.001
+    loss:
+        MeanAbsoluteError:
+            class: "tensorflow.keras.losses.MeanAbsoluteError"
+            kwargs: {} # Most losses don't accept extra arguments
+    tune_params:
+        metric: val_loss
+        mode: min
+        local_dir: data/07_model_output/ray_tune_results/ # store tune results
+        fail_fast: True
+        config:
+          layer_01_units:
+            class: ray.tune.randint
+            kwargs:
+                lower: 16
+                upper: 32
+          learning_rate:
+            class: ray.tune.uniform
+            kwargs:
+                lower: !!float 0.0001
+                upper: !!float 0.005
+        scheduler:
+            class: ray.tune.schedulers.AsyncHyperBandScheduler
+            kwargs:
+                time_attr: training_iteration
+                max_t: 40
+                grace_period: 20
+        search_alg:
+            class: ray.tune.suggest.optuna.OptunaSearch
+            kwargs: {}
+        # callbacks: - List[Dict]. Each dict-> class and kwarg: Dict[str,str]
+        num_samples: 8
+        verbose: 1 # level of messages to print
+        stop:
+            training_iteration: 10
+        resources_per_trial:
+            cpu: 1
+            gpu: 0
+    report:
+        output_path: data/08_reporting
+        report_name: performance_report
+        timestamp: True
+        title: "Model Performance Report"
+        author: "OptimusAI"
+        subject: "OptimusAI Performance Report"
+        shap:
+            explainer: shap.DeepExplainer
+            kwargs: {}

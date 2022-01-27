@@ -1,0 +1,6 @@
+context_path: gem_dl.run.ProjectContext
+project_name: "gem_dl"
+project_version: "0.16.6"
+package_name: "gem_dl"
+hooks:
+  - gem_dl.hooks.project_hooks

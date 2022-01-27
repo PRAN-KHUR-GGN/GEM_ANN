@@ -1,0 +1,36 @@
+# Here you can define all your data sets by using simple YAML syntax.
+#
+# Documentation for this file format can be found in "The Data Catalog"
+# Link: https://kedro.readthedocs.io/en/stable/05_data/01_data_catalog.html
+#
+# The Data Catalog supports being able to reference the same file using two different DataSet implementations
+# (transcoding), templating and a way to reuse arguments that are frequently repeated. See more here:
+# https://kedro.readthedocs.io/en/stable/04_user_guide/04_data_catalog.html
+#
+
+energy:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/energy.csv
+
+preprocessed_energy:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/preprocessed_energy.csv
+
+data:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/preprocessed_energy.csv
+
+td:
+  type: optimus_core.core.tag_management.TagDictExcelLocalDataSet
+  filepath: data/03_primary/tag_dictionary.xlsx
+  load_args:
+    sheet_name: 'tag_dict'
+    engine: 'openpyxl'
+
+train_data:
+  type: pandas.ParquetDataSet
+  filepath: data/05_model_input/train_trainset_static_features.parquet
+
+test_data:
+  type: pandas.ParquetDataSet
+  filepath: data/05_model_input/train_testset_static_features.parquet

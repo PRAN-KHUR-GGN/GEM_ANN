@@ -1,0 +1,2 @@
+kedro[pandas]==0.16.6
+pandas==0.25.3

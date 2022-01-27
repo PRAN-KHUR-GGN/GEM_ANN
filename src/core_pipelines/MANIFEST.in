@@ -1,0 +1,2 @@
+recursive-include core_pipelines/ *.mplstyle
+include core_pipelines/pipelines/report_html/template.md
